@@ -2,6 +2,8 @@ package bar.kv.managers;
 
 import bar.kv.GOL.GameOfLife;
 import bar.kv.GOL.GameOfLifeResizeMenu;
+import bar.kv.Leaderboard.Crypto;
+import bar.kv.Leaderboard.LeaderboardManager;
 import bar.kv.MS.*;
 import bar.kv.SK.*;
 import bar.kv.menu.*;
@@ -12,6 +14,8 @@ import java.awt.event.KeyEvent;
 public class PageManager {
     private final DrawManager drawManager;
     private final SoundManager soundManager;
+    private final LeaderboardManager leaderboardManager;
+    private final Crypto crypto;
     private final GameSelectionMenu gameSelectionMenu;
     private final StartMenu startMenu;
     private final GameOfLife gameOfLife;
@@ -36,6 +40,8 @@ public class PageManager {
     public PageManager() {
         imageManager = new ImageManager(this);
         drawManager = new DrawManager(this);
+        leaderboardManager = new LeaderboardManager(this);
+        crypto = new Crypto();
         gameSelectionMenu = new GameSelectionMenu(this);
         gameOfLife = new GameOfLife(this);
         gameOfLifeResizeMenu = new GameOfLifeResizeMenu(this, gameOfLife);
@@ -126,6 +132,14 @@ public class PageManager {
 
     public void setCurKeyEvent(KeyEvent keyEvent) {
         sudoku.setCurKeyEvent(keyEvent);
+    }
+
+    public LeaderboardManager getLeaderboardManager() {
+        return leaderboardManager;
+    }
+
+    public Crypto getCrypto() {
+        return crypto;
     }
 
     public void updateColourScheme(ColorScheme colorScheme) {

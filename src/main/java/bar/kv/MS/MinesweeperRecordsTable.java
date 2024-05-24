@@ -1,47 +1,28 @@
 package bar.kv.MS;
 
+import bar.kv.Leaderboard.LeaderboardManager;
 import bar.kv.managers.PageManager;
 import bar.kv.menu.ColorScheme;
-import com.google.gson.Gson;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseEvent;
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.StandardOpenOption;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 
 import static java.lang.Math.min;
 
 public class MinesweeperRecordsTable extends JComponent {
-    private final ArrayList<ScoreString> scores = new ArrayList<>();
+    private ArrayList<LeaderboardManager.ScoreString> scores;
     private final PageManager pageManager;
     private ColorScheme colorScheme = new ColorScheme();
 
     public MinesweeperRecordsTable(PageManager pageManager) {
         enableEvents(AWTEvent.MOUSE_EVENT_MASK);
         this.pageManager = pageManager;
-        File table = new File("src\\main\\resources\\krMinesweeperTable\\Table.json");
-        if (!table.exists()) {
-            try {
-                Files.createFile(table.toPath());
-            } catch (IOException e) {
-                System.out.println("Can`t create file\n");
-            }
-        }
-        Gson gson = new Gson();
-        try {
-            java.util.List<String> strings = Files.readAllLines(table.toPath());
-            for (String str : strings) {
-                scores.add(gson.fromJson(str, ScoreString.class));
-            }
-        } catch (IOException e) {
-            System.out.println("Can`t open table\n");
-        }
+        scores = new ArrayList<LeaderboardManager.ScoreString>(List.of(this.pageManager.getLeaderboardManager().getScores("minesweeper")));
         Collections.sort(scores);
         repaint();
     }
@@ -51,21 +32,7 @@ public class MinesweeperRecordsTable extends JComponent {
     }
 
     public void addScoreString(int bombsNum, int fieldSize, long time) {
-        scores.add(new ScoreString(bombsNum, fieldSize, time));
-        File table = new File("src\\main\\resources\\krMinesweeperTable\\Table.json");
-        if (!table.exists()) {
-            try {
-                Files.createFile(table.toPath());
-            } catch (IOException e) {
-                System.out.println("Can`t create file\n");
-            }
-        }
-        Gson gson = new Gson();
-        try {
-            Files.writeString(table.toPath(), gson.toJson(new ScoreString(bombsNum, fieldSize, time)) + "\n", StandardOpenOption.APPEND);
-        } catch (IOException e) {
-            System.out.println("Can`t write in file\n");
-        }
+        scores.add(this.pageManager.getLeaderboardManager().setScore(bombsNum, fieldSize, time, "minesweeper"));
         Collections.sort(scores);
     }
 
@@ -160,7 +127,7 @@ public class MinesweeperRecordsTable extends JComponent {
         graphics.setColor(colorScheme.getDarkColor());
         int curEl = 0;
         for (int i = h / 2 - 120; i < h / 2 - 120 + 50 * min(5, scores.size()); i += 50) {
-            graphics.drawString(Integer.toString(scores.get(curEl).getMinesNum()), w / 2 - 175, i);
+            graphics.drawString(Integer.toString(scores.get(curEl).getDifficulty()), w / 2 - 175, i);
             graphics.drawString(Integer.toString(scores.get(curEl).getFieldSize()), w / 2 - 40, i);
             graphics.drawString(getTime(scores.get(curEl).getTime()), w / 2 + 90, i);
             ++curEl;
@@ -171,42 +138,5 @@ public class MinesweeperRecordsTable extends JComponent {
         long time = num / 1000;
         DecimalFormat df = new DecimalFormat("00");
         return df.format(time / 60) + ':' + df.format(time % 60);
-    }
-
-    private class ScoreString implements Comparable<ScoreString> {
-        private final int minesNum;
-        private final int fieldSize;
-        private final long time;
-
-        public ScoreString(int minesNum, int fieldSize, long time) {
-            this.minesNum = minesNum;
-            this.fieldSize = fieldSize;
-            this.time = time;
-        }
-
-        public int getFieldSize() {
-            return fieldSize;
-        }
-
-        public int getMinesNum() {
-            return minesNum;
-        }
-
-        public long getTime() {
-            return time;
-        }
-
-        @Override
-        public int compareTo(ScoreString o) {
-            int res = o.minesNum - this.minesNum;
-            if (res != 0) {
-                return res;
-            }
-            int size = this.fieldSize - o.fieldSize;
-            if (size != 0) {
-                return size;
-            }
-            return (int) (this.time - o.time);
-        }
     }
 }

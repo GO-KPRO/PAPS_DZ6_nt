@@ -1,48 +1,29 @@
 package bar.kv.SK;
 
+import bar.kv.Leaderboard.LeaderboardManager;
 import bar.kv.managers.PageManager;
 import bar.kv.menu.ColorScheme;
-import com.google.gson.Gson;
 
 import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseEvent;
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.StandardOpenOption;
 import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.List;
 
 import static java.lang.Math.min;
 
 public class SudokuRecordsTable extends JComponent {
 
-    private final ArrayList<ScoreString> scores = new ArrayList<>();
+    private ArrayList<LeaderboardManager.ScoreString> scores = new ArrayList<>();
     private final PageManager pageManager;
     private ColorScheme colorScheme = new ColorScheme();
 
     public SudokuRecordsTable(PageManager pageManager) {
         enableEvents(AWTEvent.MOUSE_EVENT_MASK);
         this.pageManager = pageManager;
-        File table = new File("src\\main\\resources\\krSudokuTable\\Table.json");
-        if (!table.exists()) {
-            try {
-                Files.createFile(table.toPath());
-            } catch (IOException e) {
-                System.out.println("Can`t create file\n");
-            }
-        }
-        Gson gson = new Gson();
-        try {
-            java.util.List<String> strings = Files.readAllLines(table.toPath());
-            for (String str : strings) {
-                scores.add(gson.fromJson(str, ScoreString.class));
-            }
-        } catch (IOException e) {
-            System.out.println("Can`t open table\n");
-        }
+        scores = new ArrayList<LeaderboardManager.ScoreString>(List.of(this.pageManager.getLeaderboardManager().getScores("sudoku")));
         Collections.sort(scores);
         repaint();
     }
@@ -52,21 +33,7 @@ public class SudokuRecordsTable extends JComponent {
     }
 
     public void addScoreString(int difficulty, long time) {
-        scores.add(new ScoreString(difficulty, time));
-        File table = new File("src\\main\\resources\\krSudokuTable\\Table.json");
-        if (!table.exists()) {
-            try {
-                Files.createFile(table.toPath());
-            } catch (IOException e) {
-                System.out.println("Can`t create file\n");
-            }
-        }
-        Gson gson = new Gson();
-        try {
-            Files.writeString(table.toPath(), gson.toJson(new ScoreString(difficulty, time)) + "\n", StandardOpenOption.APPEND);
-        } catch (IOException e) {
-            System.out.println("Can`t write in file\n");
-        }
+        scores.add(this.pageManager.getLeaderboardManager().setScore(difficulty, 81, time, "sudoku"));
         Collections.sort(scores);
     }
 
@@ -179,32 +146,5 @@ public class SudokuRecordsTable extends JComponent {
         DecimalFormat df = new DecimalFormat("00");
         String str = df.format(time / 60) + ':' + df.format(time % 60);
         return str;
-    }
-
-    private class ScoreString implements Comparable<ScoreString> {
-        private final int difficulty;
-        private final long time;
-
-        public ScoreString(int difficulty, long time) {
-            this.difficulty = difficulty;
-            this.time = time;
-        }
-
-        public int getDifficulty() {
-            return difficulty;
-        }
-
-        public long getTime() {
-            return time;
-        }
-
-        @Override
-        public int compareTo(ScoreString o) {
-            int res = o.difficulty - this.difficulty;
-            if (res != 0) {
-                return res;
-            }
-            return (int) (this.time - o.time);
-        }
     }
 }
